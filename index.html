@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>Multiply by 1 Digit Stepper</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Atkinson+Hyperlegible:wght@400;700&family=DM+Mono:wght@500&display=swap">
+<style>
+/* Layout: problem bar + strategy tabs; work area (grid paper or area model) left, step explanation + controls right. */
+:root{
+  --bg:#f2f5fb; --surface:#ffffff; --surface-2:#e7edf8; --ink:#1b2a4a; --ink-2:#52618a; --line:#cfd8ea;
+  --brand:#2f4fd0; --brand-ink:#ffffff; --accent:#e8a317; --accent-soft:#fbefd2; --carry:#c4412d;
+  --good:#1d875a; --bad:#c4412d;
+  --pv-o:#1b915d; --pv-t:#2a72d6; --pv-h:#d9512f; --pv-th:#7b4bd1; --pv-tth:#8a3f8f;
+  --bg-o:#daf2e5; --bg-t:#e0ecfc; --bg-h:#fde4dc; --bg-th:#ece3fb; --bg-tth:#f6e0f7;
+  --shadow:0 1px 2px rgba(27,42,74,.06),0 8px 24px rgba(27,42,74,.07);
+  --f-display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-num:"DM Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1526; --surface:#162139; --surface-2:#1e2b48; --ink:#e9eefb; --ink-2:#a3b1d1; --line:#2c3b5e;
+  --brand:#7f99ff; --brand-ink:#0e1526; --accent:#f2b740; --accent-soft:#3a2d12; --carry:#ff7b64;
+  --good:#4fc98f; --bad:#ff7b64;
+  --pv-o:#52d396; --pv-t:#6fa9ff; --pv-h:#ff8b6c; --pv-th:#b597ff; --pv-tth:#e08ae6;
+  --bg-o:#133a2a; --bg-t:#172f52; --bg-h:#3d2219; --bg-th:#2b2150; --bg-tth:#3a1d3d;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1526; --surface:#162139; --surface-2:#1e2b48; --ink:#e9eefb; --ink-2:#a3b1d1; --line:#2c3b5e;
+  --brand:#7f99ff; --brand-ink:#0e1526; --accent:#f2b740; --accent-soft:#3a2d12; --carry:#ff7b64;
+  --good:#4fc98f; --bad:#ff7b64;
+  --pv-o:#52d396; --pv-t:#6fa9ff; --pv-h:#ff8b6c; --pv-th:#b597ff; --pv-tth:#e08ae6;
+  --bg-o:#133a2a; --bg-t:#172f52; --bg-h:#3d2219; --bg-th:#2b2150; --bg-tth:#3a1d3d;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.5;margin:0}
+h1{font-family:var(--f-display);line-height:1.15;margin:0;text-wrap:balance;font-size:clamp(1.6rem,4vw,2.2rem);font-weight:800}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.page{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px;display:flex;flex-direction:column;gap:16px}
+.hdr p{margin:.25rem 0 0;color:var(--ink-2);max-width:65ch}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{border:0;background:var(--brand);color:var(--brand-ink);font-weight:700;border-radius:10px;padding:9px 16px}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.ghost{background:var(--surface-2);color:var(--ink)}
+.btn.gold{background:var(--accent);color:#2b1f00}
+input.num{font-family:var(--f-num);font-size:1.6rem;padding:6px 10px;border:2px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);text-align:center;max-width:100%}
+input.num:focus{border-color:var(--brand);outline:none}
+.times{font-family:var(--f-num);font-size:1.8rem;color:var(--ink-2)}
+.err{color:var(--bad);font-weight:700;min-height:1.3em}
+.tog{display:inline-flex;align-items:center;gap:8px;font-weight:700;cursor:pointer}
+.tog input{width:20px;height:20px;accent-color:var(--brand)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.85rem;color:var(--ink-2)}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;background:currentColor;vertical-align:-1px}
+.legend .cr{color:var(--carry)}
+.tabs{display:inline-flex;background:var(--surface-2);border-radius:12px;padding:4px;gap:4px;flex-wrap:wrap}
+.tab{border:0;background:none;border-radius:9px;padding:8px 16px;font-weight:700;color:var(--ink-2)}
+.tab[aria-selected="true"]{background:var(--surface);color:var(--brand);box-shadow:var(--shadow)}
+@media (max-width:560px){
+  .tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%}
+  .tab{padding:8px 6px;font-size:.92rem;line-height:1.2}
+  .work .ac{width:2.4rem;height:2.6rem;font-size:1.6rem}
+  .work .arow.small .ac{height:1.5rem}
+}
+
+.main{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:800px){.main{grid-template-columns:1fr}}
+.work{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow);min-width:0;overflow-x:auto}
+.paper{background-image:linear-gradient(var(--surface-2) 1px,transparent 1px),linear-gradient(90deg,var(--surface-2) 1px,transparent 1px);background-size:3rem 3rem}
+.arow{display:flex;align-items:center}
+.ac{width:3rem;height:3rem;display:flex;align-items:center;justify-content:center;font-family:var(--f-num);font-size:1.9rem;border-radius:8px;flex:none;transition:background .2s}
+.arow.small .ac{height:1.6rem;font-size:1.05rem;color:var(--carry);font-weight:700}
+.arow.rule{height:3px;background:var(--ink);border-radius:2px;margin:4px 0}
+.ac.hl,.hl{background:var(--accent-soft);box-shadow:inset 0 0 0 2px var(--accent)}
+.new{animation:pop .45s}
+@keyframes pop{40%{transform:scale(1.18)}}
+.pv0{color:var(--pv-o)}.pv1{color:var(--pv-t)}.pv2{color:var(--pv-h)}.pv3{color:var(--pv-th)}.pv4,.pv5{color:var(--pv-tth)}
+
+/* area model */
+.am{display:grid;gap:6px;min-width:280px}
+.am .top{font-family:var(--f-num);font-weight:500;text-align:center;font-size:1.1rem;padding:4px 2px;border-radius:8px;align-self:end;overflow-wrap:anywhere}
+.am .left{font-family:var(--f-num);font-size:1.5rem;display:flex;align-items:center;justify-content:center;border-radius:8px}
+.am .box{border-radius:10px;border:2px dashed var(--line);min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px 4px;text-align:center;min-width:0;transition:background .3s}
+.am .box.on{border-style:solid}
+.am .box .ex{font-family:var(--f-num);font-size:.85rem;color:var(--ink-2)}
+.am .box .val{font-family:var(--f-num);font-size:clamp(.95rem,2.6vw,1.3rem);font-weight:500;white-space:nowrap}
+.am .box .ex{white-space:nowrap}
+.am{grid-auto-columns:minmax(0,1fr)}
+.am .box .q{font-family:var(--f-num);font-size:1.4rem;color:var(--ink-2);opacity:.5}
+.expanded{font-family:var(--f-num);font-size:1.25rem;margin:0 0 12px;overflow-wrap:anywhere}
+.addstack{margin-top:14px;display:inline-flex;flex-direction:column;align-items:flex-end;font-family:var(--f-num);font-size:1.35rem;gap:2px;padding:10px 14px;background:var(--surface-2);border-radius:12px}
+.addstack .rule{height:3px;background:var(--ink);width:100%;border-radius:2px;margin:2px 0}
+.addstack span{padding:0 6px;border-radius:6px}
+
+.side{display:flex;flex-direction:column;gap:12px;min-width:0}
+.phase{font-family:var(--f-display);font-weight:800;color:var(--brand);font-size:1.1rem}
+.eq{font-family:var(--f-num);font-size:clamp(1.4rem,4vw,1.9rem);line-height:1.25;overflow-wrap:anywhere}
+.explain{font-size:1.05rem}
+.explain b.c{color:var(--carry)}
+.prog{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.prog i{display:block;height:100%;background:var(--brand);width:0;transition:width .3s}
+.ctrls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ctrls .btn{padding:10px 14px}
+.muted{color:var(--ink-2)}
+.predict{background:var(--surface-2);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.fb{min-height:1.2em}.fb.good{color:var(--good);font-weight:700}.fb.bad{color:var(--bad)}
+.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
+select{font:inherit;padding:6px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="page">
+  <header class="hdr">
+    <h1>Multiply by 1 Digit Stepper</h1>
+    <p>Type any multi-digit number and a 1-digit number. Then choose the standard algorithm, partial products or the area model and go through it one step at a time. The area model sections show place value, not exact size.</p>
+  </header>
+
+  <section class="card stack" aria-label="Choose a problem" style="display:flex;flex-direction:column;gap:10px">
+    <div id="f" class="row">
+      <input id="na" class="num" inputmode="numeric" autocomplete="off" maxlength="5" style="width:6.5ch" value="3472" aria-label="Multi-digit number (2 to 5 digits)">
+      <span class="times">×</span>
+      <input id="nb" class="num" inputmode="numeric" autocomplete="off" maxlength="1" style="width:3ch" value="4" aria-label="1-digit number">
+      <button class="btn" type="button" id="show">Show steps</button>
+      <button class="btn ghost" type="button" id="rand">Random problem</button>
+      <label class="tog"><input type="checkbox" id="pred"> Predict mode</label>
+    </div>
+    <div class="err" id="err" aria-live="polite"></div>
+    <div class="row" style="justify-content:space-between">
+      <div class="tabs" role="tablist" aria-label="Strategy">
+        <button class="tab" role="tab" id="tabAlg" aria-selected="true">Standard algorithm</button>
+        <button class="tab" role="tab" id="tabPP" aria-selected="false">Partial products</button>
+        <button class="tab" role="tab" id="tabArea" aria-selected="false">Area model</button>
+      </div>
+      <div class="legend"><span class="pv4">ten thousands</span><span class="pv3">thousands</span><span class="pv2">hundreds</span><span class="pv1">tens</span><span class="pv0">ones</span><span class="cr" id="crLeg">regrouped</span></div>
+    </div>
+  </section>
+
+  <div class="main">
+    <div class="work" id="work" aria-label="Written work"></div>
+    <div class="side card">
+      <div class="row" style="justify-content:space-between"><span class="phase" id="phase"></span><span class="muted" id="cnt"></span></div>
+      <div class="prog"><i id="bar"></i></div>
+      <div class="eq" id="eq" aria-live="polite"></div>
+      <div class="explain" id="explain"></div>
+      <div class="predict" id="predBox" hidden>
+        <label for="pin"><b id="pq"></b></label>
+        <div class="row"><input id="pin" class="num" inputmode="numeric" style="width:8ch;font-size:1.3rem"><button class="btn" id="pchk" type="button">Check</button><button class="btn ghost" id="reveal" type="button">Reveal</button></div>
+        <div class="fb" id="pfb"></div>
+      </div>
+      <div class="ctrls">
+        <button class="btn ghost" id="first" type="button" aria-label="Go to start">⏮</button>
+        <button class="btn ghost" id="back" type="button">Back</button>
+        <button class="btn" id="next" type="button">Next step</button>
+        <button class="btn gold" id="play" type="button">Play</button>
+        <button class="btn ghost" id="last" type="button" aria-label="Show the final step">⏭</button>
+        <label class="muted" for="spd">Speed</label>
+        <select id="spd"><option value="3500">Slow</option><option value="2200" selected>Medium</option><option value="1200">Fast</option></select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const fmt=n=>Number(n).toLocaleString('en-US');
+const digits=n=>String(n).split('').reverse().map(Number);
+const PV=['ones','tens','hundreds','thousands','ten thousands'];
+const PVS=['one','ten','hundred','thousand','ten thousand','hundred thousand'];
+const unit=(c,n)=>n===1?PVS[c]:(c<5?PV[c]:PVS[c]+'s');
+const BG=['var(--bg-o)','var(--bg-t)','var(--bg-h)','var(--bg-th)','var(--bg-tth)'];
+let A=3472,M=4,mode='alg',steps=[],cur=0,timer=null;
+
+function estimate(a){const p=Math.pow(10,String(a).length-1);return Math.round(a/p)*p}
+
+/* ---------- standard algorithm ---------- */
+let cells={},nc=0;
+function buildAlg(){
+  const td=digits(A),P=A*M,E=estimate(A);steps=[];
+  nc=Math.max(String(P).length,String(A).length)+1;
+  steps.push({ph:'Set up',eq:`${fmt(A)} × ${M}`,tx:`Write ${fmt(A)} on top and ${M} under the <b class="pv0">ones</b> place, so the ones line up. Estimate first: ${fmt(A)} ≈ ${fmt(E)}, and ${fmt(E)} × ${M} = <b>${fmt(E*M)}</b>. Our answer should be close to that.`,w:[],hl:[]});
+  let carry=0;
+  td.forEach((d,i)=>{
+    const c=carry,val=M*d+c,last=i===td.length-1,w=[];
+    let tx=`Multiply the ${PVS[i]}s digit: ${M} × <b class="pv${i}">${d}</b> ${unit(i,d)} = ${M*d} ${unit(i,M*d)}`+(c?`. Add the regrouped <b class="c">${c}</b>: ${M*d} + ${c} = <b>${val}</b>`:'')+'. ';
+    if(last){String(val).split('').reverse().forEach((ch,j)=>w.push(['p',i+j,ch]));tx+=`This is the last digit, so write the whole <b>${val}</b>.`}
+    else if(val>=10){w.push(['p',i,String(val%10)],['c',i+1,String(Math.floor(val/10)),'c']);tx+=`${val} ${unit(i,val)} = ${Math.floor(val/10)} ${unit(i+1,Math.floor(val/10))} and ${val%10} ${unit(i,val%10)}. Write <b>${val%10}</b> in the ${PVS[i]}s place and regroup <b class="c">${Math.floor(val/10)}</b> above the ${PVS[i+1]}s.`}
+    else{w.push(['p',i,String(val)]);tx+=`Write <b>${val}</b> in the ${PVS[i]}s place. Nothing to regroup.`}
+    steps.push({ph:`Multiply the ${PV[i]}`,eq:`${M} × ${d}${c?` + ${c}`:''} = ${val}`,q:`${M} × ${d}${c?` + ${c}`:''} = ?`,ans:val,tx,w,
+      hl:[['b',0],['t',i]].concat(c?[['c',i]]:[]).concat(w.filter(x=>x[0]==='p').map(x=>['p',x[1]]))});
+    carry=last?0:Math.floor(val/10);
+  });
+  steps.push({ph:'Check: is it reasonable?',eq:`${fmt(A)} × ${M} = ${fmt(P)}`,tx:`The product is <b>${fmt(P)}</b>. Our estimate was <b>${fmt(E*M)}</b>. They are close, so the answer is reasonable.`,w:[],hl:Array.from({length:String(P).length},(_,j)=>['p',j])});
+  const work=$('#work');work.className='work paper';work.innerHTML='';cells={};
+  [['c','small'],['t',''],['b',''],['r','rule'],['p','']].forEach(([r,cls])=>{
+    if(cls==='rule'){const d=document.createElement('div');d.className='arow rule';d.style.width=(nc*3)+'rem';work.appendChild(d);return}
+    const row=document.createElement('div');row.className='arow '+cls;
+    for(let c=nc-1;c>=0;c--){const s=document.createElement('span');s.className='ac';cells[r+c]=s;row.appendChild(s)}
+    work.appendChild(row)});
+}
+function renderAlg(anim){
+  Object.values(cells).forEach(e=>{e.textContent='';e.className='ac'});
+  const put=(r,c,v,cls,an)=>{const e=cells[r+c];if(!e)return;e.textContent=v;if(cls!=='c'&&v!=='×')e.classList.add('pv'+c);if(an){void e.offsetWidth;e.classList.add('new')}};
+  digits(A).forEach((d,i)=>put('t',i,d));put('b',0,M);put('b',nc-1,'×');
+  for(let i=0;i<=cur;i++)steps[i].w.forEach(([r,c,v,cls])=>put(r,c,v,cls,anim&&i===cur));
+  steps[cur].hl.forEach(([r,c])=>cells[r+c]&&cells[r+c].classList.add('hl'));
+}
+
+/* ---------- area model ---------- */
+let parts=[];
+function buildArea(){
+  const td=digits(A),P=A*M,E=estimate(A);steps=[];
+  parts=td.map((d,i)=>({d,i,v:d*Math.pow(10,i)})).filter(p=>p.d>0).reverse(); // biggest place first
+  const zeros=td.map((d,i)=>({d,i})).filter(p=>p.d===0&&p.i<td.length-1);
+  const exp=parts.map(p=>fmt(p.v)).join(' + ');
+  steps.push({ph:'Set up',eq:`${fmt(A)} × ${M}`,tx:`An area model is a rectangle. One side is ${fmt(A)} and the other side is ${M}. Its area is the product. Estimate first: ${fmt(A)} ≈ ${fmt(E)}, and ${fmt(E)} × ${M} = <b>${fmt(E*M)}</b>.`,show:0,fill:0,hl:[]});
+  steps.push({ph:'Break apart by place value',eq:`${fmt(A)} = ${exp}`,tx:`Write ${fmt(A)} in <b>expanded form</b>. Each place value becomes its own section of the rectangle.`+(zeros.length?` The 0 in the ${zeros.map(z=>PVS[z.i]+'s').join(' and ')} place is worth nothing, so it doesn't get a section.`:''),show:1,fill:0,hl:['top']});
+  parts.forEach((p,k)=>{
+    const prod=p.v*M,units=p.d*M;
+    steps.push({ph:`Multiply the ${PV[p.i]}`,eq:`${fmt(p.v)} × ${M} = ${fmt(prod)}`,q:`${fmt(p.v)} × ${M} = ?`,ans:prod,
+      tx:p.i===0?`Multiply the ones: ${p.d} × ${M} = <b>${prod}</b>.`:`Think in place value: ${p.d} ${unit(p.i,p.d)} × ${M} = ${units} ${unit(p.i,units)}. So ${fmt(p.v)} × ${M} = <b>${fmt(prod)}</b>.`,
+      show:1,fill:k+1,hl:['box'+k]});
+  });
+  const pp=parts.map(p=>p.v*M);
+  steps.push({ph:'Add the partial products',eq:`${pp.map(fmt).join(' + ')} = ${fmt(P)}`,q:`${pp.map(fmt).join(' + ')} = ?`,ans:P,tx:`Add the areas of all the sections to find the area of the whole rectangle: <b>${fmt(P)}</b>.`,show:1,fill:parts.length,sum:true,hl:['sum']});
+  steps.push({ph:'Check: is it reasonable?',eq:`${fmt(A)} × ${M} = ${fmt(P)}`,tx:`The product is <b>${fmt(P)}</b>. Our estimate was <b>${fmt(E*M)}</b>. They are close, so the answer is reasonable. Try the Standard algorithm tab: it gives the same answer!`,show:1,fill:parts.length,sum:true,hl:['sum']});
+}
+function renderArea(anim){
+  const s=steps[cur],work=$('#work');work.className='work';
+  const tot=parts.reduce((a,p)=>a+p.v,0);
+  const fr=s.show?parts.map(p=>(1+.3*p.i).toFixed(2)+'fr').join(' '):'1fr';
+  let h=`<p class="expanded ${s.hl.includes('top')?'hl':''}" style="border-radius:8px;padding:2px 6px">${s.show?`${fmt(A)} = ${parts.map(p=>`<span class="pv${p.i}">${fmt(p.v)}</span>`).join(' + ')}`:`${fmt(A)} × ${M}`}</p>`;
+  h+=`<div class="am" style="grid-template-columns:3rem ${fr}"><span></span>`;
+  if(s.show)parts.forEach(p=>h+=`<span class="top pv${p.i}">${fmt(p.v)}</span>`);else h+=`<span class="top">${fmt(A)}</span>`;
+  h+=`<span class="left">${M}</span>`;
+  if(s.show)parts.forEach((p,k)=>{const f=k<s.fill,isNew=anim&&k===s.fill-1&&!s.sum;
+    h+=`<div class="box ${f?'on':''} ${s.hl.includes('box'+k)?'hl':''} ${isNew?'new':''}" style="${f?`background:${BG[p.i]};border-color:var(--pv-${['o','t','h','th','tth'][p.i]})`:''}"><span class="ex">${fmt(p.v)} × ${M}</span>${f?`<span class="val pv${p.i}">${fmt(p.v*M)}</span>`:'<span class="q">?</span>'}</div>`});
+  else h+=`<div class="box"><span class="q">${fmt(A)} × ${M}</span></div>`;
+  h+='</div>';
+  if(s.fill>0){
+    h+=`<div><div class="addstack ${s.hl.includes('sum')?'hl':''}" aria-label="Partial products">`;
+    parts.slice(0,s.fill).forEach((p,k)=>h+=`<span class="pv${p.i}">${k===s.fill-1&&s.fill>1?'+ ':''}${fmt(p.v*M)}</span>`);
+    h+=`<div class="rule"></div><span class="${s.sum&&anim?'new':''}">${s.sum?fmt(A*M):'?'}</span></div></div>`;
+  }
+  work.innerHTML=h;
+}
+
+/* ---------- partial products ---------- */
+let pcells={},plabels={},prows=[];
+function buildPP(){
+  const td=digits(A),P=A*M,E=estimate(A);steps=[];
+  prows=td.map((d,i)=>({d,i,v:d*Math.pow(10,i)})).filter(p=>p.d>0); // ones first
+  const zeros=td.map((d,i)=>({d,i})).filter(p=>p.d===0);
+  nc=Math.max(String(P).length,String(A).length)+1;
+  steps.push({ph:'Set up',eq:`${fmt(A)} × ${M}`,tx:`Write ${fmt(A)} on top and ${M} under the ones place. Estimate first: ${fmt(A)} ≈ ${fmt(E)}, and ${fmt(E)} × ${M} = <b>${fmt(E*M)}</b>. With partial products, we multiply ${M} by the <b>value</b> of each digit, one place at a time, and write every product on its own line. No regrouping is needed until we add.`+(zeros.length?` The 0 in the ${zeros.map(z=>PVS[z.i]+'s').join(' and ')} place is worth nothing, so it gets no line.`:''),w:[],hl:[]});
+  prows.forEach((p,k)=>{
+    const prod=p.v*M,units=p.d*M,row='q'+k;
+    steps.push({ph:`Multiply the ${PV[p.i]}`,eq:`${M} × ${fmt(p.v)} = ${fmt(prod)}`,q:`${M} × ${fmt(p.v)} = ?`,ans:prod,
+      tx:(p.i===0?`The ones digit is ${p.d}. ${M} × ${p.d} = <b>${prod}</b>.`:`The <b class="pv${p.i}">${p.d}</b> is in the ${PVS[p.i]}s place, so it is worth <b>${fmt(p.v)}</b>. ${M} × ${p.d} ${unit(p.i,p.d)} = ${units} ${unit(p.i,units)} = <b>${fmt(prod)}</b>.`)+` Write it on its own line, lined up by place value.`,
+      w:String(prod).split('').reverse().map((ch,j)=>[row,j,ch]),lab:[row,`${M} × ${fmt(p.v)}`],hl:[['b',0],['t',p.i]].concat(String(prod).split('').map((_,j)=>[row,j]))});
+  });
+  const pp=prows.map(p=>p.v*M);
+  steps.push({ph:'Add the partial products',eq:`${pp.map(fmt).join(' + ')} = ${fmt(P)}`,q:`${pp.map(fmt).join(' + ')} = ?`,ans:P,
+    tx:`Add all the partial products to find the total: <b>${fmt(P)}</b>.`,w:String(P).split('').reverse().map((ch,j)=>['s',j,ch]).concat(prows.length>1?[['q'+(prows.length-1),nc-1,'+']]:[]),hl:String(P).split('').map((_,j)=>['s',j])});
+  steps.push({ph:'Check: is it reasonable?',eq:`${fmt(A)} × ${M} = ${fmt(P)}`,tx:`The product is <b>${fmt(P)}</b>. Our estimate was <b>${fmt(E*M)}</b>. They are close, so the answer is reasonable. The standard algorithm does the same multiplications, but adds as it goes by regrouping.`,w:[],hl:String(P).split('').map((_,j)=>['s',j])});
+  const work=$('#work');work.className='work paper';work.innerHTML='';pcells={};plabels={};
+  const rows=[['t',''],['b',''],['r','rule']].concat(prows.map((_,k)=>['q'+k,''])).concat([['r2','rule'],['s','']]);
+  rows.forEach(([r,cls])=>{
+    if(cls==='rule'){const d=document.createElement('div');d.className='arow rule';d.style.width=(nc*3)+'rem';work.appendChild(d);return}
+    const row=document.createElement('div');row.className='arow';
+    for(let c=nc-1;c>=0;c--){const s=document.createElement('span');s.className='ac';pcells[r+c]=s;row.appendChild(s)}
+    const l=document.createElement('span');l.className='rlab';l.style.cssText='font-size:.85rem;color:var(--ink-2);padding-left:12px;white-space:nowrap;font-family:var(--f-num)';plabels[r]=l;row.appendChild(l);work.appendChild(row)});
+}
+function renderPP(anim){
+  Object.values(pcells).forEach(e=>{e.textContent='';e.className='ac'});Object.values(plabels).forEach(l=>l.textContent='');
+  const put=(r,c,v,an)=>{const e=pcells[r+c];if(!e)return;e.textContent=v;if(v!=='×'&&v!=='+')e.classList.add('pv'+c);if(an){void e.offsetWidth;e.classList.add('new')}};
+  digits(A).forEach((d,i)=>put('t',i,d));put('b',0,M);put('b',nc-1,'×');
+  for(let i=0;i<=cur;i++){const s=steps[i];s.w.forEach(([r,c,v])=>put(r,c,v,anim&&i===cur));if(s.lab)plabels[s.lab[0]].textContent='← '+s.lab[1]}
+  if(steps[cur].hl)steps[cur].hl.forEach(([r,c])=>pcells[r+c]&&pcells[r+c].classList.add('hl'));
+}
+
+/* ---------- shared stepping ---------- */
+function build(){stop();if(mode==='alg')buildAlg();else if(mode==='pp')buildPP();else buildArea();$('#crLeg').hidden=mode!=='alg';go(0,false)}
+function render(anim){
+  mode==='alg'?renderAlg(anim):mode==='pp'?renderPP(anim):renderArea(anim);
+  const s=steps[cur];
+  $('#phase').textContent=s.ph;$('#cnt').textContent=`Step ${cur+1} of ${steps.length}`;$('#bar').style.width=(cur/(steps.length-1)*100)+'%';
+  $('#eq').textContent=s.eq;$('#explain').innerHTML=s.tx;
+  $('#first').disabled=$('#back').disabled=cur===0;$('#next').disabled=$('#last').disabled=cur===steps.length-1;
+  $('#predBox').hidden=true;
+}
+function go(i,anim=true){cur=Math.max(0,Math.min(steps.length-1,i));render(anim)}
+function next(){
+  if(cur>=steps.length-1)return stop();
+  const s=steps[cur+1];
+  if($('#pred').checked&&s.q!==undefined){stop();$('#predBox').hidden=false;$('#pq').textContent=s.q;$('#pin').value='';$('#pfb').textContent='';$('#pfb').className='fb';
+    $('#phase').textContent=s.ph;$('#eq').textContent=s.q;$('#explain').innerHTML='Predict the answer before it is revealed.';
+    if(mode!=='area'){const cs=mode==='alg'?cells:pcells;Object.values(cs).forEach(e=>e.classList.remove('hl'));s.hl.forEach(([r,c])=>{const e=cs[r+c];if(e&&e.textContent)e.classList.add('hl')})}
+    $('#pin').focus();return}
+  go(cur+1);
+}
+$('#pchk').onclick=()=>{const s=steps[cur+1],v=parseInt(String($('#pin').value).replace(/[,\s]/g,''),10);
+  if(v===s.ans){$('#pfb').className='fb good';$('#pfb').textContent='✓ Correct!';setTimeout(()=>go(cur+1),500)}
+  else{$('#pfb').className='fb bad';$('#pfb').textContent='Not yet. Think about place value and try again.';const p=$('#predBox');p.classList.remove('shake');void p.offsetWidth;p.classList.add('shake')}};
+$('#pin').addEventListener('keydown',e=>{if(e.key==='Enter')$('#pchk').click()});
+$('#reveal').onclick=()=>go(cur+1);
+function stop(){clearInterval(timer);timer=null;$('#play').textContent='Play'}
+$('#play').onclick=()=>{if(timer)return stop();if(cur>=steps.length-1)go(0);$('#play').textContent='Pause';timer=setInterval(()=>{next();if(cur>=steps.length-1||!$('#predBox').hidden)stop()},+$('#spd').value)};
+$('#spd').onchange=()=>{if(timer){stop();$('#play').click()}};
+$('#next').onclick=()=>{stop();next()};$('#back').onclick=()=>{stop();go(cur-1)};
+$('#first').onclick=()=>{stop();go(0)};$('#last').onclick=()=>{stop();go(steps.length-1)};
+document.addEventListener('keydown',e=>{if(['INPUT','SELECT'].includes(e.target.tagName))return;if(e.key==='ArrowRight'){stop();next()}if(e.key==='ArrowLeft'){stop();go(cur-1)}});
+function setMode(m){mode=m;[['alg','#tabAlg'],['pp','#tabPP'],['area','#tabArea']].forEach(([k,s])=>$(s).setAttribute('aria-selected',m===k));build()}
+$('#tabAlg').onclick=()=>setMode('alg');$('#tabPP').onclick=()=>setMode('pp');$('#tabArea').onclick=()=>setMode('area');
+// No <form>: the page's frame blocks form submission, so every update runs from click, Enter and typing.
+function applyInputs(quiet){
+  const a=parseInt($('#na').value,10),b=parseInt($('#nb').value,10);
+  if(!(a>=10&&a<=99999)){if(!quiet)$('#err').textContent='The first number must have 2 to 5 digits (10 to 99,999).';return}
+  if(!(b>=2&&b<=9)){if(!quiet)$('#err').textContent='The second number must be one digit from 2 to 9.';return}
+  $('#err').textContent='';if(a===A&&b===M&&quiet)return;A=a;M=b;build()}
+$('#show').onclick=()=>applyInputs(false);
+let typeT;
+['#na','#nb'].forEach(s=>{const el=$(s);
+  el.addEventListener('input',()=>{el.value=el.value.replace(/\D/g,'');clearTimeout(typeT);typeT=setTimeout(()=>applyInputs(true),500)});
+  el.addEventListener('keydown',e=>{if(e.key==='Enter'){clearTimeout(typeT);applyInputs(false)}})});
+$('#rand').onclick=()=>{const len=2+Math.floor(Math.random()*3);$('#na').value=Math.floor(Math.pow(10,len-1)+Math.random()*9*Math.pow(10,len-1));$('#nb').value=2+Math.floor(Math.random()*8);applyInputs(false)};
+build();
+</script>
+
+</body>
+</html>
